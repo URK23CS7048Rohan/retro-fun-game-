@@ -19,7 +19,7 @@ export class PropLibrary {
         gltf.scene.updateMatrixWorld(true);
         gltf.scene.traverse((o) => {
           if (!o.isMesh) return;
-          const g = o.geometry.clone(); g.applyMatrix4(o.matrixWorld);
+          const g = o.geometry.clone(); g.morphAttributes = {}; g.morphTargetsRelative = false; g.applyMatrix4(o.matrixWorld);
           const m = o.material;
           if (m.map) m.map.anisotropy = 4;
           m.envMapIntensity = 0.6;

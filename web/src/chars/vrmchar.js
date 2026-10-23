@@ -38,6 +38,13 @@ export async function loadVRM(url) {
   return vrm;
 }
 
+let _ramp = null;
+function toonRamp() {
+  if (_ramp) return _ramp;
+  _ramp = new THREE.DataTexture(new Uint8Array([110, 200, 255]), 3, 1, THREE.RedFormat);
+  _ramp.minFilter = _ramp.magFilter = THREE.NearestFilter; _ramp.needsUpdate = true;
+  return _ramp;
+}
 const _e = new THREE.Euler(), _q = new THREE.Quaternion();
 
 export class VRMCharacter {
@@ -63,6 +70,8 @@ export class VRMCharacter {
       buildWeaponOn(this, grip, opts.weapon);
     }
     this.height = this.measure();
+    if (opts.height) { const k = opts.height / this.height; vrm.scene.scale.setScalar(k); this.height = opts.height; this.hipsRest = this.bones.hips.position.clone(); }
+    if (opts.gear) this.addGear(opts.gear);
   }
   restFrames(vrm) {
     vrm.scene.updateMatrixWorld(true);
@@ -97,6 +106,54 @@ export class VRMCharacter {
         }
       }
     });
+  }
+  // Extra clothing pieces parented to humanoid bones, sized from the model's
+  // own proportions: boots, a long split coat with a high collar.
+  addGear(gear) {
+    this.vrm.scene.updateMatrixWorld(true);
+    const wp = (k) => this.bones[k].getWorldPosition(new THREE.Vector3());
+    const sc = this.vrm.scene.scale.x;
+    const hipY = wp('hips').y, kneeY = wp('knL').y, ankleY = wp('anL').y;
+    const legGap = Math.abs(wp('hipL').x - wp('hipR').x);
+    const toLocal = (v) => v / sc; // bone-local units are pre-scale
+    const M = (c) => new THREE.MeshToonMaterial({ color: c, gradientMap: toonRamp(), side: THREE.DoubleSide });
+    const lathe = (pts, seg, a = 0, l = Math.PI * 2, zs = 1) => { const g = new THREE.LatheGeometry(pts.map(([x, y]) => new THREE.Vector2(x, y)), seg, a, l); g.scale(1, 1, zs); g.computeVertexNormals(); return g; };
+    const mesh = (g, m, parent) => { const o = new THREE.Mesh(g, m); o.castShadow = true; parent.add(o); return o; };
+    if (gear.boots) {
+      const shin = toLocal(kneeY - ankleY), r = toLocal(legGap * 0.36);
+      for (const k of ['knL', 'knR']) {
+        const g = lathe([[r * 1.05, -shin * 1.02], [r * 1.0, -shin * 0.7], [r * 0.85, -shin * 0.35], [r * 1.0, -shin * 0.18]], 12);
+        mesh(g, M(gear.boots, 0.55), this.bones[k]);
+      }
+      for (const k of ['anL', 'anR']) {
+        const f = new THREE.BoxGeometry(r * 1.9, r * 1.1, r * 4.2); f.translate(0, -r * 0.35, r * 1.2);
+        const o = mesh(f, M(gear.boots, 0.55), this.bones[k]);
+        void o;
+      }
+    }
+    if (gear.coat) {
+      const waist = toLocal(legGap * 1.05), len = toLocal((hipY - kneeY) * 1.35);
+      const tail = new THREE.Group(); this.bones.hips.add(tail); tail.position.y = toLocal((hipY - kneeY) * 0.12);
+      const gap = 0.36;
+      const pts = [[waist, 0], [waist * 1.15, -len * 0.35], [waist * 1.4, -len * 0.75], [waist * 1.55, -len]];
+      const coatM = M(gear.coat, 0.6);
+      const trim = M(gear.trim || '#6a7286', 0.5);
+      for (const [a, l] of [[gap, Math.PI - gap - 0.05], [Math.PI + 0.05, Math.PI - gap - 0.05]]) {
+        mesh(lathe(pts, 10, a, l, 0.78), coatM, tail);
+        // seam lines down the panel
+        for (const f of [0.3, 0.7]) {
+          const ang = a + l * f, x = Math.sin(ang), z = Math.cos(ang) * 0.78;
+          const line = new THREE.BoxGeometry(toLocal(0.008), len * 0.95, toLocal(0.008));
+          const o = mesh(line, trim, tail); o.position.set(x * waist * 1.32, -len * 0.5, z * waist * 1.32);
+          o.rotation.z = -x * 0.16; o.rotation.x = z * 0.16;
+        }
+      }
+      this.coat = tail; this.coatVel = 0; this.coatAng = 0;
+      // stand collar around the neck
+      const nr = toLocal(legGap * 0.62);
+      const collar = lathe([[nr * 0.8, 0], [nr * 0.86, toLocal(0.05)], [nr * 0.92, toLocal(0.085)]], 14, 0.7, Math.PI * 2 - 1.4);
+      const c = mesh(collar, coatM, this.bones.neck); c.position.y = toLocal(-0.03);
+    }
   }
   measure() {
     const b = new THREE.Box3().setFromObject(this.vrm.scene);
@@ -135,6 +192,14 @@ export class VRMCharacter {
       if (this.isVRM0) { bone.quaternion.x *= -1; bone.quaternion.z *= -1; }
     }
     this.bones.hips.position.set(this.hipsRest.x, this.hipsRest.y + this.driver.bob, this.hipsRest.z);
+    if (this.coat) {
+      // coat tails: damped spring pushed back by speed, kicked by attacks
+      const want = Math.min(st.speed, 9) * 0.065 + (this.driver.clip ? 0.25 : 0);
+      this.coatVel += (want - this.coatAng) * 80 * dt - this.coatVel * 8 * dt;
+      this.coatAng += this.coatVel * dt;
+      const legs = Math.max(-this.driver.pose.hipL[0], -this.driver.pose.hipR[0], 0);
+      this.coat.rotation.x = this.coatAng + legs * 0.35;
+    }
 
     // blinking and expressions
     const em = this.vrm.expressionManager;

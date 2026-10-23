@@ -77,7 +77,7 @@ export function dressWorld(world, lib) {
   };
   const scat = (dist, fn) => poissonDisc(r, 232, 232, dist, (x, z) => fn(x - 116, z - 116)).map(([x, z]) => [x - 116, z - 116]);
   // flower meadows: patches by noise
-  for (const [x, z] of scat(1.6, (x, z) => keep(x, z) && world.noise.fbm(x * 0.04 + 9, z * 0.04, 2) > 0.18)) put(r.chance(0.6) ? 'flower_empodium' : 'flower_gazania', x, z, { s: r.float(1.2, 2) });
+  for (const [x, z] of scat(3.5, (x, z) => keep(x, z) && world.noise.fbm(x * 0.04 + 9, z * 0.04, 2) > 0.22)) put('flower_gazania', x, z, { s: r.float(1.4, 2.2) });
   // ferns and shrubs in woods, rocks with dry branches
   for (const [x, z] of scat(3.2, (x, z) => keep(x, z) && world.noise.fbm(x * 0.02 + 50, z * 0.02 + 50, 3) > 0.05)) put(r.chance(0.6) ? 'fern_02' : 'shrub_03', x, z, { s: r.float(1.2, 2.2) });
   for (const [x, z] of scat(9, (x, z) => keep(x, z, 8))) {
@@ -94,7 +94,7 @@ export function dressWorld(world, lib) {
   }
   for (let z = -world.townR - 4; z > world.arena.z + world.arena.r + 3; z -= 3.2) {
     const px = world.pathCenter(z);
-    for (const s of [-1, 1]) if (r.chance(0.45)) put(r.chance(0.5) ? 'flower_empodium' : 'shrub_03', px + s * r.float(3.2, 4.5), z, { s: r.float(1, 1.6) });
+    for (const s of [-1, 1]) if (r.chance(0.45)) put('shrub_03', px + s * r.float(3.2, 4.5), z, { s: r.float(1, 1.6) });
   }
 
   const view = { flower_empodium: 55, flower_gazania: 45, fern_02: 70, shrub_03: 80, food_apple_01: 35, jug_01: 35, wooden_bucket_01: 50, ceramic_vase_01: 50, dry_branches_medium_01: 60 };

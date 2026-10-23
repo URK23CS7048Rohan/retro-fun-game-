@@ -15,7 +15,7 @@ uniform mat4 modelViewMatrix, projectionMatrix, viewMatrix;
 uniform sampler2D tHeight, tMask;
 uniform float uHalf, uTile, uTime, uRadius;
 uniform vec3 uCenter, uPlayer;
-varying float vH; varying float vShade; varying vec3 vWorld; varying float vSeed;
+varying float vH; varying float vShade; varying vec3 vWorld; varying float vSeed; varying float vFlower;
 float hash(vec2 p){ return fract(sin(dot(p, vec2(41.3, 289.1))) * 43758.5453); }
 void main(){
   vec2 o = offset;
@@ -27,13 +27,16 @@ void main(){
   float fade = smoothstep(uRadius, uRadius * 0.7, d);
   float r = hash(wp * 1.7 + seed);
   float keep = step(r, mask * 1.4);
-  float hgt = (0.16 + r * 0.28) * fade * keep * smoothstep(0.15, 0.5, mask);
+  float clump = 0.55 + 0.9 * fract(sin(dot(floor(wp * 0.7), vec2(12.9, 78.2))) * 43758.5);
+  float hgt = (0.16 + r * 0.3) * clump * fade * keep * smoothstep(0.15, 0.5, mask);
   vec3 p = position;
   float t = p.y;            // 0 at the root, 1 at the tip
   vH = t; vSeed = r;
+  vFlower = step(0.972, hash(wp * 3.3 + 7.0)) * step(0.35, mask);
   float ang = hash(wp + 3.1) * 6.2831;
   float c = cos(ang), s = sin(ang);
-  p.xz = mat2(c, -s, s, c) * (p.xz * (0.7 + r * 0.6));
+  p.xz = mat2(c, -s, s, c) * (p.xz * (0.7 + r * 0.6) * (1.0 + vFlower * step(0.9, t) * 4.0));
+  if (vFlower > 0.5) p.y *= 1.25;
   p.y *= hgt;
   // wind: big slow gusts plus a quick flutter
   float gust = sin(uTime * 1.3 + wp.x * 0.09 + wp.y * 0.06) * 0.5 + 0.5;
@@ -52,9 +55,13 @@ const frag = `
 precision highp float;
 uniform vec3 uBase, uTip, uDry, uSunDir, uSunCol, uAmb, uFogColor, uCam;
 uniform float uFogDensity;
-varying float vH; varying float vShade; varying vec3 vWorld; varying float vSeed;
+varying float vH; varying float vShade; varying vec3 vWorld; varying float vSeed; varying float vFlower;
 void main(){
   vec3 col = mix(uBase, mix(uTip, uDry, smoothstep(0.75, 1.0, vSeed) * 0.6), smoothstep(0.0, 1.0, vH));
+  if (vFlower > 0.5 && vH > 0.86) {
+    float k = fract(vSeed * 7.31);
+    col = k < 0.3 ? vec3(0.95, 0.92, 0.85) : k < 0.55 ? vec3(1.0, 0.78, 0.15) : k < 0.8 ? vec3(0.95, 0.45, 0.6) : vec3(0.55, 0.5, 0.95);
+  }
   vec3 v = normalize(vWorld - uCam);
   float back = pow(max(dot(v, uSunDir), 0.0), 3.0);
   vec3 lit = col * (uAmb + uSunCol * (0.55 * vShade)) + uSunCol * col * back * vH * 1.6;
@@ -88,10 +95,10 @@ export class GrassField {
     tM.magFilter = tM.minFilter = THREE.LinearFilter; tM.needsUpdate = true;
 
     // blade: 3 segments + tip
-    const bw = 0.028;
+    const bw = 0.022;
     const pos = [-bw, 0, 0, bw, 0, 0, -bw * 0.8, 0.4, 0, bw * 0.8, 0.4, 0, -bw * 0.5, 0.75, 0, bw * 0.5, 0.75, 0, 0, 1, 0];
     const idx = [0, 1, 2, 1, 3, 2, 2, 3, 4, 3, 5, 4, 4, 5, 6];
-    const tile = 56, spacing = 0.17 / Math.sqrt(density);
+    const tile = 48, spacing = 0.13 / Math.sqrt(density);
     const n = Math.floor(tile / spacing);
     const geo = new THREE.InstancedBufferGeometry();
     geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
@@ -107,7 +114,7 @@ export class GrassField {
     this.uniforms = {
       tHeight: { value: tH }, tMask: { value: tM }, uHalf: { value: half }, uTile: { value: tile }, uTime: { value: 0 }, uRadius: { value: tile * 0.48 },
       uCenter: { value: new THREE.Vector3() }, uPlayer: { value: new THREE.Vector3(999, 0, 999) },
-      uBase: { value: new THREE.Color('#1f3a12') }, uTip: { value: new THREE.Color('#9cc848') }, uDry: { value: new THREE.Color('#d8c060') },
+      uBase: { value: new THREE.Color('#24420f') }, uTip: { value: new THREE.Color('#a4d04c') }, uDry: { value: new THREE.Color('#d8c060') },
       uSunDir: { value: new THREE.Vector3(0, 0.1, -1) }, uSunCol: { value: new THREE.Color('#ffc27a') }, uAmb: { value: new THREE.Color('#6a7aa8') },
       uFogColor: { value: new THREE.Color('#e8a465') }, uFogDensity: { value: 0.006 }, uCam: { value: new THREE.Vector3() },
     };

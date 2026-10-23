@@ -803,7 +803,7 @@ function terrainMaterial() {
         vec4 sp(){ vec4 w = vSplat; return w / max(0.0001, w.x + w.y + w.z + w.w); }`)
       .replace('#include <map_fragment>', `
         vec4 w = sp();
-        vec3 alb = texture2D(tD0, vWUv * uScale.x).rgb * vec3(0.78, 1.08, 0.5) * w.x + texture2D(tD1, vWUv * uScale.y).rgb * w.y
+        vec3 alb = texture2D(tD0, vWUv * uScale.x).rgb * vec3(0.62, 0.95, 0.38) * w.x + texture2D(tD1, vWUv * uScale.y).rgb * w.y
                  + texture2D(tD2, vWUv * uScale.z).rgb * w.z + texture2D(tD3, vWUv * uScale.w).rgb * w.w;
         // large-scale tint variation breaks up tiling on the meadow
         float big = sin(vWUv.x * 0.031) * sin(vWUv.y * 0.027 + 1.3) * 0.5 + 0.5;

@@ -42,9 +42,9 @@ async function main() {
   scene.add(dressWorld(world, lib));
   scene.add(buildStrings(world));
   atmo = new Atmosphere(world, scene);
-  const asuna = await makeVRMCharacter('models/AvatarSample_B.vrm', { weapon: 'rapier', tint: [
+  const asuna = await makeVRMCharacter('models/AvatarSample_B.vrm', { weapon: 'rapier', height: 1.64, tint: [
     { match: /HAIR/, color: '#f0a060', shade: '#a05030' }, { match: /Tops/, color: '#ffffff', shade: '#d8c8d0' }, { match: /Bottoms/, color: '#d02a30', shade: '#801018' } ] });
-  const kirito = await makeVRMCharacter('models/Seed-san.vrm', { weapon: 'elucidator', hide: /arm_mat|arm_plastic|armgear|backpack|anim_logo|green_emit/, tint: [
+  const kirito = await makeVRMCharacter('models/Seed-san.vrm', { weapon: 'elucidator', height: 1.72, gear: { boots: '#1c1d22', coat: '#1d1f26', trim: '#5a6278' }, hide: /arm_mat|arm_plastic|armgear|backpack|anim_logo|green_emit/, tint: [
     { match: /^hair$/, color: '#2a2a34', shade: '#101018' }, { match: /huku/, color: '#2a2c36', shade: '#121318' } ] });
   chars.push(asuna, kirito);
   scene.add(asuna.root, kirito.root);
@@ -57,6 +57,10 @@ async function main() {
     place(kirito, -0.45, 16, 0.3); place(asuna, 0.45, 16, -0.3);
     const y = world.heightAt(0, 16);
     camPos.set(0, y + 1.45, 17.9); target.set(0, y + 1.3, 16);
+  } else if (shot === 'game') {
+    place(kirito, 0.3, 21, Math.PI - 0.2); place(asuna, -1.3, 22.2, Math.PI - 0.1);
+    const y = world.heightAt(0, 25);
+    camPos.set(1.1, y + 2.6, 25.3); target.set(0, y + 1.5, 17);
   } else if (shot === 'street') {
     place(kirito, 1.2, 21, -0.4); place(asuna, -0.4, 20.2, 0.3);
     const y = world.heightAt(0, 26);
@@ -99,4 +103,4 @@ async function main() {
 function resize() { R.resize(innerWidth, innerHeight); }
 addEventListener('resize', resize);
 main().catch((e) => { console.error('MAIN', e.stack || e); window.__err = String(e.stack || e); });
-window.addEventListener('error', (e) => { window.__err = String(e.message); });
+window.addEventListener('error', (e) => { window.__err = String(e.error?.stack || e.message); });

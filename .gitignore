@@ -1,0 +1,11 @@
+node_modules/
+web/dist/
+web/preview/*.bundle.js
+web/preview/props/
+web/preview/tex/
+web/preview/models/
+android/.gradle/
+android/build/
+android/app/build/
+android/local.properties
+*.keystore

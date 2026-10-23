@@ -109,7 +109,7 @@ export class HUD {
       c.mini.style.transform = `translate(${x}px, ${yy + 4}px)`;
       if (frac !== undefined) c.mini.firstChild.style.width = pct(frac);
     };
-    for (const e of g.enemies) if (!e.dead && (e.kind !== 'boss' || e.active || true)) show('e' + e.id, e, e.kind === 'boss' ? 4.6 : e.kind === 'kobold' ? 2.2 : 1.6, e === g.lock ? 'locked' : '', e.name, e.hp / e.maxHp);
+    for (const e of g.enemies) if (!e.dead && (e.kind !== 'boss' || e.active || true)) show('e' + e.id, e, e.kind === 'boss' ? 4.6 : e.kind === 'kobold' ? 2.2 : e.sp.vrm ? e.sp.height + 0.3 : 1.6, e === g.lock ? 'locked' : '', e.name, e.hp / e.maxHp);
     for (const n of g.npcs) show('n' + n.id, n, n.height + 0.35, 'npc', n.name);
     if (g.companion && !g.companion.dead) show('c', g.companion, 2.0, 'party', g.companion.name);
     for (const [k, c] of this.cursors) if (!live.has(k)) { c.el.remove(); c.tag.remove(); c.mini.remove(); this.cursors.delete(k); }

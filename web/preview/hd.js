@@ -47,6 +47,12 @@ async function main() {
   const kirito = await makeVRMCharacter('models/Seed-san.vrm', { weapon: 'elucidator', height: 1.72, gear: { boots: '#1c1d22', coat: '#1d1f26', trim: '#5a6278' }, hide: /arm_mat|arm_plastic|armgear|backpack|anim_logo|green_emit/, tint: [
     { match: /^hair$/, color: '#2a2a34', shade: '#101018' }, { match: /huku/, color: '#2a2c36', shade: '#121318' } ] });
   chars.push(asuna, kirito);
+  if (shot === 'lineup') {
+    for (const [u, x] of [['models/Scarecrow.vrm', -1.6], ['models/EYESummoner.vrm', 1.6]]) {
+      const c = await makeVRMCharacter(u, { height: 1.75 }); chars.push(c); scene.add(c.root);
+      c.teleport(x, world.heightAt(x, 15.5), 15.5, -x * 0.15);
+    }
+  }
   scene.add(asuna.root, kirito.root);
   let target = new THREE.Vector3(), camPos = new THREE.Vector3();
   if (shot === 'party') {
@@ -57,6 +63,10 @@ async function main() {
     place(kirito, -0.45, 16, 0.3); place(asuna, 0.45, 16, -0.3);
     const y = world.heightAt(0, 16);
     camPos.set(0, y + 1.45, 17.9); target.set(0, y + 1.3, 16);
+  } else if (shot === 'lineup') {
+    place(kirito, -0.55, 16, 0.1); place(asuna, 0.55, 16, -0.1);
+    const y = world.heightAt(0, 16);
+    camPos.set(0, y + 1.5, 21); target.set(0, y + 1.1, 15.5);
   } else if (shot === 'game') {
     place(kirito, 0.3, 21, Math.PI - 0.2); place(asuna, -1.3, 22.2, Math.PI - 0.1);
     const y = world.heightAt(0, 25);

@@ -27,7 +27,14 @@ export class FollowCam {
     const fz = target ? player.z * 0.75 + target.z * 0.25 : player.z;
     this.focus.x = damp(this.focus.x, fx, 10, dt); this.focus.z = damp(this.focus.z, fz, 10, dt);
     this.focus.y = damp(this.focus.y, player.y + 1.45, 8, dt);
-    const dist = target ? this.dist + 1 : this.dist;
+    let dist = target ? this.dist + 1 : this.dist;
+    // pull in when something solid sits between the player and the camera
+    const sx = Math.sin(this.yaw) * Math.cos(this.pitch), sz = Math.cos(this.yaw) * Math.cos(this.pitch);
+    for (let d = 0.6; d < dist; d += 0.25) {
+      if (this.world.blocked(this.focus.x + sx * d, this.focus.z + sz * d, 0.15)) { dist = Math.max(1.2, d - 0.35); break; }
+    }
+    this.curDist = damp(this.curDist ?? dist, dist, dist < (this.curDist ?? dist) ? 20 : 3, dt);
+    dist = this.curDist;
     let cx = this.focus.x + Math.sin(this.yaw) * Math.cos(this.pitch) * dist;
     let cz = this.focus.z + Math.cos(this.yaw) * Math.cos(this.pitch) * dist;
     let cy = this.focus.y + Math.sin(this.pitch) * dist;

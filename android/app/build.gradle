@@ -1,0 +1,31 @@
+plugins { id 'com.android.application' }
+
+android {
+    namespace 'com.spireonline.game'
+    compileSdk 34
+    defaultConfig {
+        applicationId 'com.spireonline.game'
+        minSdk 26
+        targetSdk 34
+        versionCode 1
+        versionName '0.1.0'
+    }
+    signingConfigs {
+        release {
+            storeFile file('../spire-release.keystore')
+            storePassword 'spireonline'
+            keyAlias 'spire'
+            keyPassword 'spireonline'
+        }
+    }
+    buildTypes {
+        // release builds are signed with ../spire-release.keystore when present, else the debug key
+        release { minifyEnabled false; signingConfig file('../spire-release.keystore').exists() ? signingConfigs.release : signingConfigs.debug }
+    }
+    compileOptions { sourceCompatibility JavaVersion.VERSION_17; targetCompatibility JavaVersion.VERSION_17 }
+    // game assets are already compressed (jpg/png/vrm); don't waste time recompressing
+    androidResources { noCompress += ['vrm', 'jpg', 'png', 'bin', 'glb', 'woff2', 'js', 'gltf'] }
+    sourceSets { main { assets.srcDirs = ['../../web/dist'] } }
+}
+
+dependencies { implementation 'androidx.webkit:webkit:1.12.1' }

@@ -21,6 +21,7 @@ const BONE = {
 // with rest frames C1..Cn the bone rotations are q_i = C_{i-1} * E_i * C_i^-1,
 // which makes every segment point where the pose says.
 const DOWN = new THREE.Vector3(0, -1, 0);
+const RPI = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), Math.PI);
 const CHAINS = [['shL', 'elL', 'wrL'], ['shR', 'elR', 'wrR'], ['hipL', 'knL'], ['hipR', 'knR']];
 const CHILD = { shL: 'elL', elL: 'wrL', shR: 'elR', elR: 'wrR', hipL: 'knL', knL: 'anL', hipR: 'knR', knR: 'anR' };
 
@@ -64,8 +65,7 @@ export class VRMCharacter {
     this.exprTarget = { happy: 0, angry: 0, sad: 0, surprised: 0 };
     // weapon held in the right hand, expressed in pose space
     if (opts.weapon) {
-      const hand = this.bones.wrR;
-      const holder = new THREE.Group(); holder.quaternion.copy(this.C.wrR); hand.add(holder);
+      const holder = this.attach('wrR');
       const grip = new THREE.Group(); grip.position.set(0, -0.075, 0.012); holder.add(grip);
       buildWeaponOn(this, grip, opts.weapon);
     }
@@ -76,8 +76,11 @@ export class VRMCharacter {
   restFrames(vrm) {
     vrm.scene.updateMatrixWorld(true);
     const wp = (k) => this.bones[k].getWorldPosition(new THREE.Vector3());
+    // Directions are measured in the character root's frame (pose space).
+    // For VRM 0.x the scene is turned 180 degrees; the final quaternion flip
+    // in update() converts pose-space rotations into its bone frames.
     const rootInv = new THREE.Quaternion();
-    vrm.scene.getWorldQuaternion(rootInv); rootInv.invert();
+    this.root.getWorldQuaternion(rootInv); rootInv.invert();
     this.C = {}; this.Ci = {};
     for (const k of JOINTS) { this.C[k] = new THREE.Quaternion(); }
     for (const k in CHILD) {
@@ -90,6 +93,14 @@ export class VRMCharacter {
     for (const k of JOINTS) this.Ci[k] = this.C[k].clone().invert();
     this.parentOf = {};
     for (const ch of CHAINS) ch.forEach((k, i) => { this.parentOf[k] = i ? ch[i - 1] : null; });
+  }
+  // A group under a bone whose axes are pose space for that limb, so props
+  // built with "limb hangs down -y, character faces +z" sit correctly.
+  attach(k) {
+    const g = new THREE.Group();
+    g.quaternion.copy(this.isVRM0 ? RPI : new THREE.Quaternion()).multiply(this.C[k] || new THREE.Quaternion());
+    this.bones[k].add(g);
+    return g;
   }
   // Placeholder styling: recolour or hide parts by material name.
   applyLook(opts) {
@@ -123,17 +134,17 @@ export class VRMCharacter {
       const shin = toLocal(kneeY - ankleY), r = toLocal(legGap * 0.36);
       for (const k of ['knL', 'knR']) {
         const g = lathe([[r * 1.05, -shin * 1.02], [r * 1.0, -shin * 0.7], [r * 0.85, -shin * 0.35], [r * 1.0, -shin * 0.18]], 12);
-        mesh(g, M(gear.boots, 0.55), this.bones[k]);
+        mesh(g, M(gear.boots, 0.55), this.attach(k));
       }
       for (const k of ['anL', 'anR']) {
         const f = new THREE.BoxGeometry(r * 1.9, r * 1.1, r * 4.2); f.translate(0, -r * 0.35, r * 1.2);
-        const o = mesh(f, M(gear.boots, 0.55), this.bones[k]);
+        const o = mesh(f, M(gear.boots, 0.55), this.attach(k));
         void o;
       }
     }
     if (gear.coat) {
       const waist = toLocal(legGap * 1.05), len = toLocal((hipY - kneeY) * 1.35);
-      const tail = new THREE.Group(); this.bones.hips.add(tail); tail.position.y = toLocal((hipY - kneeY) * 0.12);
+      const tail = new THREE.Group(); this.attach('hips').add(tail); tail.position.y = toLocal((hipY - kneeY) * 0.12);
       const gap = 0.36;
       const pts = [[waist, 0], [waist * 1.15, -len * 0.35], [waist * 1.4, -len * 0.75], [waist * 1.55, -len]];
       const coatM = M(gear.coat, 0.6);
@@ -152,7 +163,7 @@ export class VRMCharacter {
       // stand collar around the neck
       const nr = toLocal(legGap * 0.62);
       const collar = lathe([[nr * 0.8, 0], [nr * 0.86, toLocal(0.05)], [nr * 0.92, toLocal(0.085)]], 14, 0.7, Math.PI * 2 - 1.4);
-      const c = mesh(collar, coatM, this.bones.neck); c.position.y = toLocal(-0.03);
+      const c = mesh(collar, coatM, this.attach('neck')); c.position.y = toLocal(-0.03);
     }
   }
   measure() {

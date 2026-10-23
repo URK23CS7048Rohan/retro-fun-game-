@@ -10,6 +10,8 @@ export const SPECIES = {
   boar: { name: 'Frenzy Boar', body: '#3a2a24', seam: '#ff6a2a', hp: 60, atk: 9, speed: 5.5, range: 2.2, xp: 14, col: 12 },
   wolf: { name: 'Dire Wolf', body: '#262c3a', seam: '#5ad8ff', hp: 48, atk: 8, speed: 7.5, range: 2.0, xp: 16, col: 14 },
   kobold: { name: 'Ruin Kobold Trooper', body: '#3a3426', seam: '#ffd23a', hp: 90, atk: 12, speed: 4.2, range: 2.4, xp: 26, col: 30 },
+  scarecrow: { name: 'Pumpkin Scarecrow', body: '#5a3a1a', seam: '#ff9a2a', hp: 75, atk: 10, speed: 4.6, range: 2.2, xp: 20, col: 18, vrm: 'models/Scarecrow.vrm', height: 1.8 },
+  summoner: { name: 'Eye Summoner', body: '#2a1430', seam: '#c860ff', hp: 170, atk: 16, speed: 3.8, range: 2.7, xp: 48, col: 60, vrm: 'models/EYESummoner.vrm', height: 2.0, weapon: 'longsword' },
   boss: { name: 'Illfang the Kobold Lord', body: '#2a1414', seam: '#ff2a3a', hp: 1400, atk: 24, speed: 4.6, range: 3.6, xp: 600, col: 1200 },
 };
 

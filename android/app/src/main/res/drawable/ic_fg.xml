@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android" android:width="108dp" android:height="108dp" android:viewportWidth="108" android:viewportHeight="108">
+    <!-- the tower silhouette with a sword across it -->
+    <path android:fillColor="#1a1c28" android:pathData="M54,22 L58,40 L64,40 L62,52 L68,52 L66,66 L74,66 L72,86 L36,86 L34,66 L42,66 L40,52 L46,52 L44,40 L50,40 Z" />
+    <path android:fillColor="#ffb850" android:pathData="M52,46h4v5h-4zM50,58h3v5h-3zM55,58h3v5h-3zM47,72h3v6h-3zM58,72h3v6h-3z" />
+    <path android:fillColor="#eef4ff" android:pathData="M30,80 L33,83 L78,38 L80,30 L72,32 Z" />
+    <path android:fillColor="#c8a050" android:pathData="M28,74 L38,84 L36,86 L26,76 Z" />
+</vector>

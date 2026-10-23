@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>Spire Online</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<canvas id="game"></canvas>
+<div id="ui">
+  <div id="overlay"></div>
+  <div id="hud" class="hidden">
+    <div id="status" class="panel">
+      <div class="badge">⚔</div>
+      <div class="row"><span class="name" id="s-name">Kirito</span><span class="lv" id="s-lv">LV 1</span></div>
+      <div class="bar" id="s-hp"><b></b><i></i></div>
+      <div class="nums"><span>HP</span><span id="s-hpn"></span></div>
+      <div class="bar sp" id="s-sp"><i></i></div>
+      <div class="nums"><span>SP</span><span id="s-spn"></span></div>
+      <div class="bar sp" id="s-xp" style="height:3px;opacity:.6"><i style="background:#f0c060"></i></div>
+      <div id="party"><div class="mate"><span id="m-name">Asuna</span><div class="bar" id="m-hp"><i></i></div></div></div>
+    </div>
+    <div id="area" class="panel">
+      <div id="a-floor">Floor 1</div>
+      <div id="a-area">Area : Town of Beginnings</div>
+      <div id="a-safe" class="safe">In Safe Zone</div>
+      <div id="a-col" class="col">0 Col</div>
+    </div>
+    <button id="menuBtn" class="panel" aria-label="Menu">☰</button>
+    <div id="target" class="panel hidden"><div class="tname" id="t-name"></div><div class="bar" id="t-hp"><i></i></div></div>
+    <div id="boss" class="panel hidden"><div class="bname" id="b-name"></div><div class="bars"><div class="bar"><i></i></div><div class="bar"><i></i></div><div class="bar"><i></i></div><div class="bar"><i></i></div></div></div>
+    <div id="log" class="panel"></div>
+    <div id="toast"></div>
+    <div id="interact" class="panel hidden" data-act="interact"></div>
+    <div id="hint-stick">MOVE</div>
+    <div id="stick"><div id="knob"></div></div>
+    <div id="controls">
+      <div class="btn" id="b-attack" data-act="attack"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 20 L15 9 M13 7 L17 11 M15 9 L20 4 L20 6 L17 9 M6 14 L10 18 M4 20 L6 18"/></svg></div>
+      <div class="btn" id="b-s1" data-act="skill1"><div class="cd"></div>SONIC<br>LEAP<span class="cost">20</span></div>
+      <div class="btn" id="b-s2" data-act="skill2"><div class="cd"></div>HORIZ.<br>SQUARE<span class="cost">30</span></div>
+      <div class="btn" id="b-s3" data-act="skill3"><div class="cd"></div>VORPAL<br>STRIKE<span class="cost">45</span></div>
+      <div class="btn" id="b-roll" data-act="roll">DODGE</div>
+      <div class="btn" id="b-guard" data-act="guard">GUARD</div>
+      <div class="btn" id="b-switch" data-act="switch">SWITCH</div>
+      <div class="btn" id="b-potion" data-act="potion">POTION<span class="count">5</span></div>
+      <div class="btn" id="b-lock" data-act="lock">LOCK</div>
+    </div>
+  </div>
+  <div id="menu" class="menu hidden"><div class="sheet panel"></div></div>
+</div>
+<div id="title" class="hidden">
+  <div class="logo">SPIRE<br>ONLINE</div>
+  <div class="sub">100 FLOORS · NO LOG OUT</div>
+  <div class="chars"></div>
+  <button id="start">LINK START</button>
+  <div class="fine">Tip: drag the left side to move, the right side to look, tap to attack. Fan project inspired by Sword Art Online.</div>
+</div>
+<canvas id="linkstart"></canvas>
+<div id="loading"><div><div class="t">SPIRE ONLINE</div><div class="b"><i></i></div><div class="s">Starting</div></div></div>
+<script src="game.js"></script>
+</body>
+</html>

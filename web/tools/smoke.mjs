@@ -1,0 +1,21 @@
+import { chromium } from '/opt/node-tools/node_modules/playwright/index.mjs';
+import fs from 'fs';
+const [,, url, out = 'shots/game.png'] = process.argv;
+const b = await chromium.launch({ args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] });
+const p = await b.newPage({ viewport: { width: 1280, height: 720 } });
+const errs = [];
+p.on('console', (m) => { if (['error', 'warning'].includes(m.type())) errs.push(m.type() + ': ' + m.text()); });
+p.on('pageerror', (e) => errs.push('PAGEERROR ' + e.message + '\n' + e.stack));
+const T = +(process.env.TO || 900000);
+await p.goto(url);
+try { await p.waitForFunction(() => window.__titleReady, null, { timeout: T, polling: 2000 }); } catch { console.log('NO TITLE'); console.log(errs.join('\n')); console.log(await p.evaluate(() => document.querySelector('#loading .s')?.textContent)); process.exit(1); }
+console.log('title ready');
+await p.evaluate(() => document.querySelector('#start').click());
+await p.waitForTimeout(+(process.env.WAIT || 20000));
+await p.keyboard.down('w'); await p.waitForTimeout(8000); await p.keyboard.up('w');
+await p.keyboard.press('j'); await p.waitForTimeout(3000);
+const state = await p.evaluate(() => { const g = window.__game; return { x: g.player.x.toFixed(1), z: g.player.z.toFixed(1), hp: g.player.hp, enemies: g.enemies.length, npcs: g.npcs.length, floor: g.floor }; });
+console.log(JSON.stringify(state));
+await p.screenshot({ path: out, timeout: 300000 });
+console.log(errs.slice(0, 15).join('\n'));
+await b.close();

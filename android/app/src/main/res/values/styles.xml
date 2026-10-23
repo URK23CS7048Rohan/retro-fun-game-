@@ -1,0 +1,6 @@
+<resources>
+    <style name="Theme.Spire" parent="android:Theme.Material.NoActionBar.Fullscreen">
+        <item name="android:windowBackground">#05080f</item>
+        <item name="android:windowLayoutInDisplayCutoutMode">shortEdges</item>
+    </style>
+</resources>

@@ -280,7 +280,7 @@ export class HDWorld {
     }
     // market stalls
     for (let i = 0; i < 4; i++) {
-      const a = Math.PI * 0.18 + i * 0.42;
+      const a = Math.PI * 0.62 + i * 0.4;
       const x = Math.cos(a) * 9, z = Math.sin(a) * 9;
       this.stall(B, x, z, Math.atan2(-x, -z), i);
     }
@@ -294,7 +294,7 @@ export class HDWorld {
       const a = r.float(0, Math.PI * 2), d = r.float(6.5, 12);
       this.npcSpots.push([Math.cos(a) * d, Math.sin(a) * d]);
     }
-    this.spawnPoint = [0, 7];
+    this.spawnPoint = [2.5, 8];
   }
 
   lampPost(B, x, y, z) {
@@ -736,10 +736,12 @@ export class HDWorld {
       const x = Math.cos(a) * d, z = Math.sin(a) * d;
       if (Math.hypot(x - this.arena.x, z - this.arena.z) < 30) { i--; continue; }
       const forest = this.noise.fbm(x * 0.02 + 50, z * 0.02 + 50, 3);
-      this.spawnZones.push({ x, z, r: 10, kind: forest > 0.1 ? 'wolf' : 'boar', max: forest > 0.1 ? 3 : 2 });
+      const kind = forest > 0.1 ? 'wolf' : (i % 3 === 2 ? 'scarecrow' : 'boar');
+      this.spawnZones.push({ x, z, r: 10, kind, max: kind === 'wolf' ? 3 : 2 });
     }
     this.spawnZones.push({ x: this.arena.x - 22, z: this.arena.z + 28, r: 8, kind: 'kobold', max: 2 });
     this.spawnZones.push({ x: this.arena.x + 22, z: this.arena.z + 28, r: 8, kind: 'kobold', max: 2 });
+    this.spawnZones.push({ x: this.arena.x, z: this.arena.z + 36, r: 6, kind: 'summoner', max: 1 });
   }
 
   addCollider(x, z, r) { this.colliders.push({ x, z, r }); }

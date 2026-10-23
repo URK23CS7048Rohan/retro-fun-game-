@@ -5,6 +5,7 @@ import { boidSteer } from '../ai/director.js';
 import { QLearner, BOSS_MOVES } from '../ai/qlearn.js';
 import { angleDiff, damp, clamp } from '../core/rng.js';
 import { rollDamage } from './combat.js';
+import { makeVRMCharacter } from '../chars/vrmchar.js';
 
 // Field monsters. Their brain is a small state machine whose decisions lean
 // on three shared systems:
@@ -21,14 +22,27 @@ export class Enemy {
     this.game = game; this.kind = kind; this.zone = zone;
     this.sp = SPECIES[kind];
     this.name = this.sp.name;
-    this.model = kind === 'kobold' ? new ConstructHumanoid('kobold', 'axe') : new BeastModel(kind);
-    this.root = this.model.root;
+    if (this.sp.vrm) {
+      // humanoid monsters from VRM files: an empty stand-in until the model loads
+      this.root = new THREE.Group();
+      this.model = { root: this.root, update() {}, play() {} };
+      this.loading = true;
+      makeVRMCharacter(this.sp.vrm, { height: this.sp.height, weapon: this.sp.weapon }).then((m) => {
+        if (this.disposed) return;
+        this.root.add(m.root); this.model = { root: this.root, update: (dt, st) => m.update(dt, st), play: (c, sp) => m.play(c, sp), vrm: m };
+        m.setExpression('angry', 0.7);
+        this.loading = false;
+      }).catch((e) => console.warn('monster model failed', e));
+    } else {
+      this.model = kind === 'kobold' ? new ConstructHumanoid('kobold', 'axe') : new BeastModel(kind);
+      this.root = this.model.root;
+    }
     game.scene.add(this.root);
     this.level = level;
     const k = 1 + (level - 1) * 0.28;
     this.maxHp = Math.round(this.sp.hp * k); this.hp = this.maxHp;
     this.atk = this.sp.atk * (1 + (level - 1) * 0.22); this.def = level * 1.5;
-    this.radius = kind === 'kobold' ? 0.5 : 0.7;
+    this.radius = kind === 'kobold' || this.sp.vrm ? 0.5 : 0.7;
     this.x = zone.x; this.z = zone.z; this.y = 0; this.facing = Math.random() * 6;
     this.vx = 0; this.vz = 0; this.speed = 0;
     this.state = 'wander'; this.t = 0; this.target = null;
@@ -43,6 +57,7 @@ export class Enemy {
     const g = this.game, w = g.world;
     this.t += dt; this.hurt = Math.max(0, this.hurt - dt * 3); this.stagger -= dt;
     if (this.dead) { this.deadT += dt; this.model.update(dt, { speed: 0, dead: true }); return; }
+    if (this.loading) { this.y = g.world.heightAt(this.x, this.z); this.root.position.set(this.x, this.y, this.z); return; }
     const party = g.party.filter((p) => !p.dead);
     // aggro: nearest party member in sight; whoever hit us last keeps priority
     let tgt = this.aggro && !this.aggro.dead ? this.aggro : null;
@@ -116,14 +131,14 @@ export class Enemy {
           this.windDur = this.kind === 'kobold' ? 0.55 : 0.45;
         }
         // kobolds raise their guard against a predicted slash
-        this.guarding = this.kind === 'kobold' && g.predictor.lastPrediction?.action === 'slash' && g.predictor.lastPrediction.p > 0.45 && d < 3.5;
+        this.guarding = (this.kind === 'kobold' || this.kind === 'summoner') && g.predictor.lastPrediction?.action === 'slash' && g.predictor.lastPrediction.p > 0.45 && d < 3.5;
         break;
       }
       case 'windup': {
         const a = Math.atan2(tgt.x - this.x, tgt.z - this.z);
         this.facing += angleDiff(this.facing, a) * Math.min(1, dt * 10);
         this.guarding = false;
-        if (this.t > this.windDur) { this.state = 'attack'; this.t = 0; this.hitDone = false; if (this.model.play) this.model.play(CLIPS.slash3, 1.1); g.audio?.play(this.kind === 'wolf' ? 'growl' : 'whoosh'); }
+        if (this.t > this.windDur) { this.state = 'attack'; this.t = 0; this.hitDone = false; if (this.model.play) this.model.play(this.sp.vrm ? CLIPS.slash1 : CLIPS.slash3, 1.1); g.audio?.play(this.kind === 'wolf' ? 'growl' : 'whoosh'); }
         break;
       }
       case 'attack': {
@@ -185,7 +200,7 @@ export class Enemy {
     if (this.hp <= 0) { this.hp = 0; this.dead = true; this.game.onEnemyDeath?.(this, from); if (this.state === 'windup' || this.state === 'attack') this.game.attackTokens++; }
     return d;
   }
-  dispose() { this.game.scene.remove(this.root); }
+  dispose() { this.disposed = true; this.game.scene.remove(this.root); }
 }
 
 // The floor boss: a Q-learning agent choosing among six moves. Each move is
@@ -199,6 +214,7 @@ export class Boss extends Enemy {
     this.root = this.model.root; game.scene.add(this.root);
     this.radius = 1.3;
     this.maxHp = Math.round(SPECIES.boss.hp * (1 + (level - 1) * 0.12)); this.hp = this.maxHp;
+    this.atk = SPECIES.boss.atk * (1 + (level - 1) * 0.12);
     this.bars = 4;
     this.q = new QLearner(); if (qtable) this.q.load(qtable);
     this.move = null; this.moveT = 0; this.dealt = 0; this.taken = 0;
@@ -217,7 +233,13 @@ export class Boss extends Enemy {
   }
   update(dt) {
     const g = this.game;
-    if (!this.active || this.dead) { super.update(dt); return; }
+    if (this.dead) { super.update(dt); return; }
+    if (!this.active) {
+      // waits in the arena, breathing, until the party steps inside
+      this.root.position.set(this.x, this.y, this.z); this.root.rotation.y = this.facing;
+      this.model.update(dt, { speed: 0, combat: false });
+      return;
+    }
     this.t += dt; this.hurt = Math.max(0, this.hurt - dt * 3); this.stagger -= dt;
     const p = this.aggro && !this.aggro.dead ? this.aggro : g.player;
     this.target = p;

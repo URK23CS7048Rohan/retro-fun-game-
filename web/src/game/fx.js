@@ -19,7 +19,7 @@ export class Trail {
     this.mat = new THREE.ShaderMaterial({
       uniforms: { uColor: { value: new THREE.Color(1, 1, 1) }, uK: { value: 0 } },
       vertexShader: 'attribute float a; varying float vA; void main(){ vA=a; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}',
-      fragmentShader: 'uniform vec3 uColor; uniform float uK; varying float vA; void main(){ float a=vA*uK; if(a<0.05) discard; gl_FragColor=vec4(mix(uColor,vec3(1.0),a*a*0.6)*2.2, a*0.9);}',
+      fragmentShader: 'uniform vec3 uColor; uniform float uK; varying float vA; void main(){ float a=vA*uK; if(a<0.05) discard; gl_FragColor=vec4(mix(uColor,vec3(1.0),a*a*0.4)*1.5, a*0.7);}',
       transparent: true, depthWrite: false, side: THREE.DoubleSide, blending: THREE.AdditiveBlending, toneMapped: false,
     });
     this.mesh = new THREE.Mesh(this.geo, this.mat);
